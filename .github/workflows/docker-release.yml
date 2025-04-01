@@ -50,7 +50,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/tdldocker:${{ steps.compare-versions.outputs.new_version }}
             ghcr.io/${{ github.repository_owner }}/tdldocker:latest
           build-args:
-            RELEASE_VERSION: ${{ steps.compare-versions.outputs.new_version}}
+            RELEASE_VERSION = ${{ steps.compare-versions.outputs.new_version}}
       - name: Update version record
         if: steps.compare-versions.outputs.need_build == 'true'
         run: |
