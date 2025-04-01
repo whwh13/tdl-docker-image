@@ -9,7 +9,7 @@ jobs:
   check-release:
     runs-on: ubuntu-latest
     permissions:  # 关键配置
-      contents: read
+      contents: write
       packages: write  # 必须包含此权限
     env:
       TARGET_REPO: "iyear/tdl"
