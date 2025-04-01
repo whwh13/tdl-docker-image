@@ -67,6 +67,6 @@ jobs:
           cd current_repo
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
-          git add ./current_repo/last_version.txt
+          git add ./last_version.txt
           git commit -m "Update tracked version to ${{ steps.compare-versions.outputs.new_version }}"
           git push
