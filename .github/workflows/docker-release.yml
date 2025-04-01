@@ -43,6 +43,7 @@ jobs:
         if: steps.compare-versions.outputs.need_build == 'true'
         uses: docker/build-push-action@v4
         with:
+          context: ${{ github.workspace }}
           file: ${{ github.workspace }}/Dockerfile
           push: true
           tags: |
