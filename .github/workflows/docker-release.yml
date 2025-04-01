@@ -63,10 +63,10 @@ jobs:
       - name: Update version record
         if: steps.compare-versions.outputs.need_build == 'true'
         run: |
-          echo "${{ steps.compare-versions.outputs.new_version }}" > $LAST_VERSION_FILE
+          echo "${{ steps.compare-versions.outputs.new_version }}" > ./current_repo/last_version.txt
           cd current_repo
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
-          git add ./$LAST_VERSION_FILE
+          git add ./current_repo/last_version.txt
           git commit -m "Update tracked version to ${{ steps.compare-versions.outputs.new_version }}"
           git push
