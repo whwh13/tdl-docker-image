@@ -1,0 +1,63 @@
+name: Docker Release Build
+
+on:
+  schedule:
+    - cron: '15 3 * * *'  # 每小时执行一次
+  workflow_dispatch:     # 允许手动触发
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_REPO: "iyear/tdl"
+      LAST_VERSION_FILE: "last_version.txt"
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        with:
+          path: current_repo
+      - name: Get last builded version
+        id: get_builded_version
+        run: |
+          if [ -f "current_repo/$LAST_VERSION_FILE" ]; then
+            echo "last_version=$(cat current_repo/$LAST_VERSION_FILE)" >> $GITHUB_OUTPUT
+          else
+            echo "last_version=0" >> $GITHUB_OUTPUT
+          fi
+      - name: Get release version from target repo
+        id: get-release
+        uses: octokit/request-action@v2.x
+        with:
+          route: GET /repos/${{ env.TARGET_REPO }}/releases/latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compare versions
+        id: compare-versions
+        run: |
+          CURRENT_VERSION="${{ fromJson(steps.get-release.outputs.data).tag_name }}"
+          if [ "$CURRENT_VERSION" != "${{ steps.get_builded_version.outputs.last_version }}" ]; then
+            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "need_build=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Build and push to GHCR
+        if: steps.compare-versions.outputs.need_build == 'true'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/tdldocker:${{ steps.compare-versions.outputs.new_version }}
+            ghcr.io/${{ github.repository_owner }}/tdldocker:latest
+          build-args:
+            RELEASE_VERSION: ${{ steps.compare-versions.outputs.new_version}}
+      - name: Update version record
+        if: steps.compare-versions.outputs.need_build == 'true'
+        run: |
+          echo "${{ steps.compare-versions.outputs.new_version }}" > $LAST_VERSION_FILE
+          cd current_repo
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add ../$LAST_VERSION_FILE
+          git commit -m "Update tracked version to ${{ steps.compare-versions.outputs.new_version }}"
+          git push
